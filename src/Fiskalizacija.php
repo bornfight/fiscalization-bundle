@@ -159,7 +159,7 @@ class Fiskalizacija
         return $envelope->saveXML();
     }
 
-    public function sendSoap($payload)
+    public function sendSoap($payload): string
     {
         $ch = curl_init();
 
@@ -192,34 +192,81 @@ class Fiskalizacija
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        if ($response) {
+        if ($response !== false) {
             curl_close($ch);
             return $this->parseResponse($response, $code);
-        } else {
-            throw new Exception(curl_error($ch));
-            curl_close($ch);
         }
 
+        throw new Exception(curl_error($ch));
+        curl_close($ch);
     }
 
-    public function parseResponse($response, $code = 4)
+    public function parseResponse(string $response, $code = 4): string
     {
         if ($code === 200) {
             return $response;
-        } else {
-            $DOMResponse = new DOMDocument();
-            $DOMResponse->loadXML($response);
-
-            $SifraGreske = $DOMResponse->getElementsByTagName('SifraGreske')->item(0);
-            $PorukaGreske = $DOMResponse->getElementsByTagName('PorukaGreske')->item(0);
-
-            if ($SifraGreske && $PorukaGreske) {
-                throw new Exception(sprintf('%s: %s', $SifraGreske->nodeValue, $PorukaGreske->nodeValue));
-            } else {
-                throw new Exception(print_r($response, true), $code);
-            }
         }
 
+        $errorsMap = $this->parseErrors($response);
+
+        if ($errorsMap === null || count($errorsMap) === 0) {
+            throw new Exception(print_r($response, true), $code);
+        }
+
+        $composedErrors = array_map(
+            fn (string $code, string $errorMessage) => sprintf('%s: %s', $code, $errorMessage),
+            array_keys($errorsMap),
+            $errorsMap
+        );
+
+        throw new Exception(implode('; ', $composedErrors));
+    }
+
+    public function parseErrors(string $response): ?array
+    {
+        $DOMResponse = new DOMDocument();
+        $DOMResponse->loadXML($response);
+
+        $errors = $DOMResponse->getElementsByTagName('Greske')->item(0);
+
+        if (null === $errors || false === $errors->hasChildNodes()) {
+            return null;
+        }
+
+        $errorsMap = [];
+
+        /** @var DOMElement $childNode */
+        foreach ($errors->childNodes as $childNode) {
+            $errorMessageNode = $childNode->getElementsByTagName('PorukaGreske')->item(0);
+            $errorCodeNode = $childNode->getElementsByTagName('SifraGreske')->item(0);
+
+            if ($errorCodeNode === null || $errorMessageNode === null) {
+                continue;
+            }
+
+            $errorsMap[$errorCodeNode->nodeValue] = $errorMessageNode->nodeValue;
+        }
+
+        return $errorsMap;
+    }
+
+    public function responseContainsErrors(string $response): bool
+    {
+        $errorsMap = $this->parseErrors($response);
+
+        if ($errorsMap === null || count($errorsMap) === 0) {
+            return false;
+        }
+
+        if (count($errorsMap) > 1) {
+            return true;
+        }
+
+        if (isset($errorsMap['v100'])) {
+            return false;
+        }
+
+        return true;
     }
 
     private function getIssuerName(): string
