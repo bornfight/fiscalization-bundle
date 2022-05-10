@@ -15,17 +15,17 @@ class Bill
 
     public $billNumber;
 
-    public $listPDV;
+    public $listPDV = [];
 
-    public $listPNP;
+    public $listPNP = [];
 
-    public $listOtherTaxRate;
+    public $listOtherTaxRate = [];
 
-    public $taxFreeValuePdv;
+    public $taxFreeValuePdv = null;
 
-    public $marginForTaxRate;
+    public $marginForTaxRate = null;
 
-    public $taxFreeValue;
+    public $taxFreeValue = null;
 
     public $refund = [];
 
@@ -215,9 +215,17 @@ class Bill
         }
         /*********************************************/
 
-        $writer->writeElementNs($ns, 'IznosOslobPdv', null, number_format($this->taxFreeValuePdv, 2, '.', ''));
-        $writer->writeElementNs($ns, 'IznosMarza', null, number_format($this->marginForTaxRate, 2, '.', ''));
-        $writer->writeElementNs($ns, 'IznosNePodlOpor', null, number_format($this->taxFreeValue, 2, '.', ''));
+        if ($this->taxFreeValuePdv !== null) {
+            $writer->writeElementNs($ns, 'IznosOslobPdv', null, number_format($this->taxFreeValuePdv, 2, '.', ''));
+        }
+
+        if ($this->marginForTaxRate !== null) {
+            $writer->writeElementNs($ns, 'IznosMarza', null, number_format($this->marginForTaxRate, 2, '.', ''));
+        }
+
+        if ($this->taxFreeValue !== null) {
+            $writer->writeElementNs($ns, 'IznosNePodlOpor', null, number_format($this->taxFreeValue, 2, '.', ''));
+        }
 
         /*********** Naknada *************************/
         if (!empty($this->refund)) {
