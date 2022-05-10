@@ -17,7 +17,9 @@
     "require": {
         "php": ">=7.4",
         "nesbot/carbon": "2.*",
-        "ext-openssl": "*"
+        "ext-openssl": "*",
+        "ext-dom": "*",
+        "ext-curl": "*"
     },
     "require-dev": {
         "mockery/mockery": "~0.9",
