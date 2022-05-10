@@ -250,6 +250,20 @@ class Fiskalizacija
         return $errorsMap;
     }
 
+    public function parseUniqueBillIdentifier(string $response): ?string
+    {
+        $DOMResponse = new DOMDocument();
+        $DOMResponse->loadXML($response);
+
+        $uniqueBillIdNode = $DOMResponse->getElementsByTagName('Jir')->item(0);
+
+        if (null === $uniqueBillIdNode) {
+            return null;
+        }
+
+        return $uniqueBillIdNode->nodeValue;
+    }
+
     public function responseContainsErrors(string $response): bool
     {
         $errorsMap = $this->parseErrors($response);
