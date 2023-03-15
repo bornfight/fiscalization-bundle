@@ -1,4 +1,6 @@
-<?php namespace Nticaric\Fiskalizacija;
+<?php
+
+namespace Nticaric\Fiskalizacija;
 
 /**
  *
@@ -94,6 +96,9 @@ class Fiskalizacija
 
         $X509IssuerName = $this->getIssuerName();
         $X509IssuerSerial = $this->publicCertificateData['serialNumber'];
+        if (strpos($X509IssuerSerial, '0x') === 0) {
+            $X509IssuerSerial = $this->bchexdec($X509IssuerSerial);
+        }
 
         $publicCertificatePureString = str_replace('-----BEGIN CERTIFICATE-----', '', $this->certificate['cert']);
         $publicCertificatePureString = str_replace('-----END CERTIFICATE-----', '', $publicCertificatePureString);
@@ -296,4 +301,15 @@ class Fiskalizacija
         );
     }
 
+    public function bchexdec($hex): string
+    {
+        $dec = 0;
+        $len = strlen($hex);
+
+        for ($i = 1; $i <= $len; $i++) {
+            $dec = bcadd($dec, bcmul((string) hexdec($hex[$i - 1]), bcpow('16', (string) ($len - $i))));
+        }
+
+        return $dec;
+    }
 }
