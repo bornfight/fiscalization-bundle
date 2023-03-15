@@ -19,7 +19,8 @@
         "nesbot/carbon": "2.*",
         "ext-openssl": "*",
         "ext-dom": "*",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "ext-bcmath": "*"
     },
     "require-dev": {
         "mockery/mockery": "~0.9",
